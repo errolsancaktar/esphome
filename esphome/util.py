@@ -261,11 +261,26 @@ class OrderedDict(collections.OrderedDict):
 
 
 def list_yaml_files(folders):
-    files = filter_yaml_files(
-        [os.path.join(folder, p) for folder in folders for p in os.listdir(folder)]
-    )
-    files.sort()
-    return files
+    """Lists YAML files in specified folders and relevant subdirectories."""
+    all_files = []
+    for folder in folders:
+        all_files.extend(_find_matching_yaml_files(folder))
+    return sorted(filter_yaml_files(all_files))
+
+
+def _find_matching_yaml_files(root_dir):
+    """Recursively finds YAML files in a directory and its relevant subdirectories."""
+    found_files = []
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        for filename in filenames:
+            found_files.append(os.path.join(dirpath, filename))
+
+        # Check for subdirectories matching filenames in the current directory.
+        for dirname in dirnames:
+            if dirname in (os.path.splitext(f)[0] for f in filenames):
+                subdir_path = os.path.join(dirpath, dirname)
+                found_files.extend(_find_matching_yaml_files(subdir_path))
+    return found_files
 
 
 def filter_yaml_files(files):
